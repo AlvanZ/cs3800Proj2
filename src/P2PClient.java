@@ -38,29 +38,36 @@ public class P2PClient extends Application {
   private Boolean demo = false;
 
   public static final Integer PORT_NUMBER = 1234;
-  public static final String HOST_NAME = "localhost";
+  public static  String HOST_NAME = "localhost";
+
+  private Integer portNumber;
 
   private DatagramSocket socket;
   private DatagramPacket packet;
 
+  private InetAddress address;
 
 
-  public P2PClient(String name) {
-    demoName = name;
-  }
 
-  public P2PClient() {}
 
-  public void demoName() {
-    //sendMessage(demoName, "");
-  }
+  // public P2PClient(String name) {
+  //   demoName = name;
+  // }
 
-  public void demoMessages() {
-    demo = true;
-    for (int i = 1; i <= 5; i++) {
-      //sendMessage(Integer.toString(i), "tag");
-    }
-  }
+  // public P2PClient(Integer portNumber) {
+  //   this.portNumber = portNumber;
+  // }
+
+  // public void demoName() {
+  //   //sendMessage(demoName, "");
+  // }
+
+  // public void demoMessages() {
+  //   demo = true;
+  //   for (int i = 1; i <= 5; i++) {
+  //     //sendMessage(Integer.toString(i), "tag");
+  //   }
+  // }
 
   //DEMO
 
@@ -132,7 +139,7 @@ public class P2PClient extends Application {
           //DEMO
           demo = false;
 
-          //sendMessage(messageField.getText(), "tag");
+          sendMessage(messageField.getText(), "tag");
           Platform.runLater(() -> {
             messageField.clear();
           });
@@ -144,7 +151,7 @@ public class P2PClient extends Application {
         //DEMO
         demo = false;
 
-       // sendMessage(messageField.getText(), "tag");
+        sendMessage(messageField.getText(), "tag");
         Platform.runLater(() -> {
           messageField.clear();
         });
@@ -179,56 +186,64 @@ public class P2PClient extends Application {
 
   private void initializeClient(String host, Integer port) {
     try {
-      this.socket = new DatagramSocket(port);
+      this.socket = new DatagramSocket();
+      this.address = InetAddress.getLocalHost();
+      System.out.println("address: " + address + " port: " + socket.getLocalPort());
+
       
     } catch (IOException e) {
-      System.out.println("Unable to connect to server at " + host + ":" + port);
+      System.out.println("Unable to connect to server at " + host + ":" + socket.getPort());
       updateChatBox("Unable to connect to server!");
       e.printStackTrace();
-      close();
     }
   }
 
-//   public synchronized void sendMessage(String message, String tag) {
-//     String response;
-//     try {
-//       if (socket.isConnected()) {
-//         if (message.length() > 0) {
-//           if (message.equals(".")) {
-//             tag = "disconnect";
-//           } else {
-//             tag = (userName == null) ? "username" : "message";
+  public synchronized void sendMessage(String message, String tag) {
+    String response;
+    try {
+      if (message.length() > 0) {
+        if (message.equals(".")) {
+          tag = "disconnect";
+        } else {
+          tag = (userName == null) ? "username" : "message";
 
-//             message = (userName == null) ? "[" + message + "]" : message;
-//           }
+          message = (userName == null) ? "[" + message + "]" : message;
+        }
 
-//           response =
-//             Utility.formmatPayload(tag, message, Utility.getCurrentTime());
+        response =
+          Utility.formmatPayload(tag, message, Utility.getCurrentTime());
 
-//             // TODO: add datagram send
-//         //   bufferedWriter.write(response);
-//         //   bufferedWriter.newLine();
-//         //   bufferedWriter.flush();
-//         }
-//       }
-//  } //catch (IOException e) {
-//     //   close();
-//     // }
-//   }
+        byte[] buffer = response.getBytes();
+        DatagramPacket packet =
+          new DatagramPacket(buffer, buffer.length, address, PORT_NUMBER);
 
-//   public void listenToMessage(TextArea screen) {
-//     String msgFromGroupChat = "";
-//     try {
-//       while (socket.isConnected()) {
-//         if (bufferedReader.ready()) {
-//           msgFromGroupChat = bufferedReader.readLine();
-//           processResponse(msgFromGroupChat);
-//         }
-//       }
-//     } catch (IOException e) {
-//       close();
-//     }
-//   }
+        socket.send(packet);
+        System.out.println("Sent to address: " + address + " port: " + socket.getLocalPort());
+      }
+    } catch (IOException e) {}
+    
+    
+    
+  }
+
+  public void listenToMessage(TextArea screen) {
+
+    try {
+    while (true) {
+      byte[] buffer = new byte[1024];
+      DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
+      socket.receive(packet);
+
+      String message = new String(packet.getData(), 0, packet.getLength());
+
+      System.out.println(message);
+    }
+  } catch (IOException e) {
+    System.err.println("IOException " + e);
+ 
+  }
+  }
 
   private void processResponse(String response) {
     System.out.println("Response: " + response);
@@ -263,7 +278,7 @@ public class P2PClient extends Application {
       new Runnable() {
         @Override
         public void run() {
-          //listenToMessage(chatArea);
+          listenToMessage(chatArea);
         }
       }
     );
