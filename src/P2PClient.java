@@ -56,7 +56,7 @@ public class P2PClient extends Application {
   private TimeHeap messageHeap = new TimeHeap();
   
 
-  public void processResponse() {
+  public void checkHeap() {
     synchronized (messageHeap) {
       while (!messageHeap.isEmpty()) {
         String request = messageHeap.removeFromQueue();
@@ -72,25 +72,6 @@ public class P2PClient extends Application {
     }
   }
 
-
-  // public P2PClient(String name) {
-  //   demoName = name;
-  // }
-
-  // public P2PClient(Integer portNumber) {
-  //   this.portNumber = portNumber;
-  // }
-
-  // public void demoName() {
-  //   //sendMessage(demoName, "");
-  // }
-
-  // public void demoMessages() {
-  //   demo = true;
-  //   for (int i = 1; i <= 5; i++) {
-  //     //sendMessage(Integer.toString(i), "tag");
-  //   }
-  // }
 
   //DEMO
 
@@ -260,6 +241,8 @@ public class P2PClient extends Application {
 
       String message = new String(packet.getData(), 0, packet.getLength());
 
+      // TODO: check if message is a hashmap byte object
+
       System.out.println(message);
       processResponse(message);
     }
@@ -290,6 +273,7 @@ public class P2PClient extends Application {
       if (!msg.contains("@Server")) {
         userName = msg;
         System.out.println("Set username: " + userName);
+        messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), msg);
       } else {
         messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), msg);
       }
@@ -320,6 +304,17 @@ public class P2PClient extends Application {
       }
     );
     listenToMessageThread.start();
+
+
+    Thread heapThread = new Thread(() -> {
+     
+      checkHeap();
+      
+    });
+
+    heapThread.start();
+
+
   }
 
 //   public void close() {
