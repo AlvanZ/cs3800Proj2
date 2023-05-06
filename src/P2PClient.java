@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -23,6 +25,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class P2PClient extends Application {
 
@@ -48,6 +51,26 @@ public class P2PClient extends Application {
   private InetAddress address;
 
 
+  private HashMap< String, InetAddress> clients = new HashMap<>();
+
+  private TimeHeap messageHeap = new TimeHeap();
+  
+
+  public void processResponse() {
+    synchronized (messageHeap) {
+      while (!messageHeap.isEmpty()) {
+        String request = messageHeap.removeFromQueue();
+        updateChatBox(request);
+        System.out.println("Display Message: " + request);
+      }
+    }
+    try {
+      Thread.sleep(100); // wait for 100 milliseconds before checking the list again
+    } catch (InterruptedException e) {
+      // Exception handling for thread interruption
+      e.printStackTrace();
+    }
+  }
 
 
   // public P2PClient(String name) {
@@ -198,7 +221,7 @@ public class P2PClient extends Application {
     }
   }
 
-  public synchronized void sendMessage(String message, String tag) {
+  public void sendMessage(String message, String tag) {
     String response;
     try {
       if (message.length() > 0) {
@@ -238,6 +261,7 @@ public class P2PClient extends Application {
       String message = new String(packet.getData(), 0, packet.getLength());
 
       System.out.println(message);
+      processResponse(message);
     }
   } catch (IOException e) {
     System.err.println("IOException " + e);
@@ -245,7 +269,7 @@ public class P2PClient extends Application {
   }
   }
 
-  private void processResponse(String response) {
+  private void processResponse(String response) throws UnknownHostException {
     System.out.println("Response: " + response);
 
     String fields[] = response.split(",");
@@ -265,10 +289,23 @@ public class P2PClient extends Application {
     } else if (tag.equals("username")) {
       if (!msg.contains("@Server")) {
         userName = msg;
+        System.out.println("Set username: " + userName);
       } else {
-        updateChatBox(time + msg);
+        messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), msg);
       }
-    } else {
+    } else if (tag.equals("add")) {
+
+      String client[] = msg.split("/");
+
+      String name = client[0];
+      InetAddress ip = InetAddress.getByName(client[1]);
+
+      clients.put(name, ip);
+
+      System.out.println("Added client " + name + " at " + ip.getHostAddress());
+
+    }
+    else {
       updateChatBox(time + msg);
     }
   }
