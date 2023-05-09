@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.*;
+import java.time.LocalDate;
 import java.util.HashMap;
 
 public class P2PTracker {
@@ -66,10 +67,18 @@ public class P2PTracker {
                     sendClientList();
                     String name = msg;
                     clients.put(name, new String[]{packet.getAddress().toString(),Integer.toString(port_client)});
+                    
                     System.out.println("New user: " + name + "port: " + clients.get(name)[1]);
     
                     send(Utility.formmatPayload("username", name, Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
-                    send(Utility.formmatPayload("message", "@Server: " + name+ " has joined the chat!", Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
+
+                    String current_time = Utility.getCurrentTime();
+                
+
+                    broadCast(Utility.formmatPayload("message", "@Server: " + name+ " has joined the chat!", current_time));
+                    //send(Utility.formmatPayload("message", "@Server: " + name+ " has joined the chat!", current_time), packet.getAddress(), packet.getPort());
+
+                    addClient(name, packet.getAddress().toString(), Integer.toString(port_client), time);
     
       
     
@@ -121,6 +130,37 @@ public class P2PTracker {
                 send(Utility.formmatPayload("add", key + "#" + clients.get(key)[0].toString() + "#" + clients.get(key)[1].toString(), Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
             }
         }
+
+        private void addClient(String name, String ip, String port, String time) throws IOException {
+    
+            for (String key : clients.keySet()) {
+
+                String[] data = clients.get(key);
+                // TODO: remove the / before ip
+                data[0] = data[0].replace('/',' ' ).strip();
+
+                InetAddress revc_ip = InetAddress.getByName(data[0]);
+                Integer p = Integer.parseInt(data[1]);
+                send(Utility.formmatPayload("add", name + "#" + ip + "#" + port, time), revc_ip, p);
+            }
+        }
+
+        private void broadCast(String msg) throws IOException {
+    
+            for (String key : clients.keySet()) {
+
+                String[] data = clients.get(key);
+                // TODO: remove the / before ip
+                data[0] = data[0].replace('/',' ' ).strip();
+
+                InetAddress revc_ip = InetAddress.getByName(data[0]);
+                Integer p = Integer.parseInt(data[1]);
+
+                send(msg, revc_ip, p);
+            }
+        }
+
+
     }
 
    

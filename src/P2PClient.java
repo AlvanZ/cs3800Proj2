@@ -227,6 +227,7 @@ public class P2PClient extends Application {
         if (tag.equals("message")){
           System.out.println("BroadCasting....");
           broadCast(response);
+          //messageHeap.addToQueue(null, tag);
 
         }
         else
