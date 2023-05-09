@@ -242,8 +242,6 @@ public class P2PClient extends Application {
 
       String message = new String(packet.getData(), 0, packet.getLength());
 
-
-      System.out.println(message);
       processResponse(message);
     }
   } catch (IOException e) {
@@ -273,7 +271,6 @@ public class P2PClient extends Application {
       if (!msg.contains("@Server")) {
         userName = msg;
         System.out.println("Set username: " + userName);
-        messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), msg);
       } else {
         messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), msg);
       }
