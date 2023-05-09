@@ -51,7 +51,7 @@ public class P2PClient extends Application {
   private InetAddress address;
 
 
-  private HashMap< String, InetAddress> clients = new HashMap<>();
+  private HashMap< String, String[]> clients = new HashMap<>();
 
   private TimeHeap messageHeap = new TimeHeap();
   
@@ -71,6 +71,8 @@ public class P2PClient extends Application {
       e.printStackTrace();
     }
   }
+
+
 
 
   //DEMO
@@ -203,6 +205,8 @@ public class P2PClient extends Application {
   }
 
   public void sendMessage(String message, String tag) {
+
+    System.out.println("Sending message: " + message);
     String response;
     try {
       if (message.length() > 0) {
@@ -220,15 +224,52 @@ public class P2PClient extends Application {
         byte[] buffer = response.getBytes();
         DatagramPacket packet =
           new DatagramPacket(buffer, buffer.length, address, PORT_NUMBER);
+        if (tag.equals("message")){
+          System.out.println("BroadCasting....");
+          broadCast(response);
 
-        socket.send(packet);
-        System.out.println("Sent to address: " + address + " port: " + socket.getLocalPort());
+        }
+        else
+        {
+          socket.send(packet);
+          System.out.println("Sent to address: " + address + " port: " + socket.getLocalPort());
+
+        }
+
+
       }
     } catch (IOException e) {}
     
-    
-    
   }
+
+  public synchronized void send(String message, InetAddress address, int port) throws IOException {
+    byte[] buffer = message.getBytes();
+    System.out.println("Sending : " + message + " to" + address + " port: " + port);
+    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+    socket.send(packet);
+}
+  
+private void broadCast(String msg) throws IOException {
+
+
+    
+  for (String key : clients.keySet()) {
+      
+      String[] data = clients.get(key);
+ 
+      // TODO: remove the / before ip
+      data[0] = data[0].replace('/',' ' ).strip();
+
+      System.out.println("Data: " + data[0] + ",  " + data[1]);
+      InetAddress ip = InetAddress.getByName(data[0]);
+      Integer p = Integer.parseInt(data[1]);
+
+      System.out.println("Sending to " + key  + ": " + msg +  "ip: " + ip + " p: " + p);
+
+     send(msg, ip, p);
+  }
+}
+
 
   public void listenToMessage(TextArea screen) {
 
@@ -259,6 +300,8 @@ public class P2PClient extends Application {
     String msg = fields[1];
     String rawTime = fields[2];
 
+    
+
     String time = demo
       ? Utility.demoFormatTime(Utility.stringToLocalDateTime(rawTime))
       : Utility.formatTime(Utility.stringToLocalDateTime(rawTime));
@@ -276,14 +319,18 @@ public class P2PClient extends Application {
       }
     } else if (tag.equals("add")) {
 
-      String client[] = msg.split("/");
+      String client[] = msg.split("#");
 
       String name = client[0];
-      InetAddress ip = InetAddress.getByName(client[1]);
+      String ip = client[1];
+      String client_port = client[2];
+      
+      //InetAddress ip = InetAddress.getByName(client[1]);
+      
 
-      clients.put(name, ip);
+      clients.put(name, new String[]{ip,client_port});
 
-      System.out.println("Added client " + name + " at " + ip.getHostAddress());
+      System.out.println("Added client " + name + " at " + ip + " port " + client_port);
 
     }
     else {
