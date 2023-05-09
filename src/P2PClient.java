@@ -239,9 +239,9 @@ public class P2PClient extends Application {
 
       socket.receive(packet);
 
+
       String message = new String(packet.getData(), 0, packet.getLength());
 
-      // TODO: check if message is a hashmap byte object
 
       System.out.println(message);
       processResponse(message);
@@ -307,8 +307,9 @@ public class P2PClient extends Application {
 
 
     Thread heapThread = new Thread(() -> {
-     
-      checkHeap();
+      while(true){
+        checkHeap();
+      }
       
     });
 
