@@ -66,19 +66,26 @@ public class P2PTracker {
                 if (!clients.containsKey(msg)) {
                     sendClientList();
                     String name = msg;
-                    clients.put(name, new String[]{packet.getAddress().toString(),Integer.toString(port_client)});
                     
-                    System.out.println("New user: " + name + "port: " + clients.get(name)[1]);
-    
+                    
                     send(Utility.formmatPayload("username", name, Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
-
+                    
                     String current_time = Utility.getCurrentTime();
-                
+                    
+                    // add to other clients
+                    addClient(name, packet.getAddress().toString(), Integer.toString(port_client), time);
 
+                    clients.put(name, new String[]{packet.getAddress().toString(),Integer.toString(port_client)});
+                    System.out.println("New user: " + name + "port: " + clients.get(name)[1]);
+
+                    // put to client list
+                    
+
+
+                    // broadcast
                     broadCast(Utility.formmatPayload("message", "@Server: " + name+ " has joined the chat!", current_time));
                     //send(Utility.formmatPayload("message", "@Server: " + name+ " has joined the chat!", current_time), packet.getAddress(), packet.getPort());
 
-                    addClient(name, packet.getAddress().toString(), Integer.toString(port_client), time);
     
       
     
@@ -87,34 +94,21 @@ public class P2PTracker {
     
                     send(Utility.formmatPayload("username", "@Server: Enter a different username", Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
                 }
-               
-            //   if (!userMap.containsKey(msg)) {
-            //     username = msg;
-            //     userMap.put(username, this);
-        
-            //     // Send confirmation of username to the client
-            //     sendMessage(Utility.formmatPayload("username", msg, time));
-            //     // Add a join message to the message queue
-            //     msgList.addToQueue(
-            //       LocalDateTime.now(),
-            //       Utility.formmatPayload(
-            //         "message",
-            //         "@Server: " + username + " has joined the chat!",
-            //         time
-            //       ) +
-            //       "," +
-            //       username
-            //     );
-            //   } else {
-            //     // Send error message for duplicate username
-            //     sendMessage(
-            //       Utility.formmatPayload(
-            //         "username",
-            //         "@Server: Enter a different username",
-            //         Utility.getCurrentTime()
-            //       )
-            //     );
-            //  }
+
+            }
+            else if(tag.equals("disconnect")){
+                String name = msg;
+                //TODO disconnect from server
+
+                if(clients.containsKey(name)){
+                    String current_time = Utility.getCurrentTime();
+                    clients.remove(name);
+                    System.out.println("removed " + name);
+                    send(Utility.formmatPayload("disconnect", "@Tracker: Goodbye!", current_time), packet.getAddress(), packet.getPort());
+                    broadCast(Utility.formmatPayload("remove",name, current_time));
+                    broadCast(Utility.formmatPayload("message","@Tracker: " + name +" has left the chat!", current_time));
+                }
+
             }
           }
     
@@ -129,6 +123,7 @@ public class P2PTracker {
             for (String key : clients.keySet()) {
                 send(Utility.formmatPayload("add", key + "#" + clients.get(key)[0].toString() + "#" + clients.get(key)[1].toString(), Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
             }
+            send(Utility.formmatPayload("message", "@Tracker: Enter your username!", Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
         }
 
         private void addClient(String name, String ip, String port, String time) throws IOException {
@@ -143,6 +138,7 @@ public class P2PTracker {
                 Integer p = Integer.parseInt(data[1]);
                 send(Utility.formmatPayload("add", name + "#" + ip + "#" + port, time), revc_ip, p);
             }
+
         }
 
         private void broadCast(String msg) throws IOException {

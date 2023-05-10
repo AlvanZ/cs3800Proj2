@@ -205,8 +205,6 @@ public class P2PClient extends Application {
   }
 
   public void sendMessage(String message, String tag) {
-
-    System.out.println("Sending message: " + message);
     String response;
     try {
       if (message.length() > 0) {
@@ -218,8 +216,13 @@ public class P2PClient extends Application {
           message = (userName == null) ? "[" + message + "]" : message;
         }
 
+        message = tag.equals("message") ?  userName + ": "+ message : message;
+        message = tag.equals("disconnect") ? userName : message;
+
         response =
           Utility.formmatPayload(tag, message, Utility.getCurrentTime());
+
+        System.out.println("sending message: " + response);
 
         byte[] buffer = response.getBytes();
         DatagramPacket packet =
@@ -228,7 +231,6 @@ public class P2PClient extends Application {
           System.out.println("BroadCasting....");
           broadCast(response);
           //messageHeap.addToQueue(null, tag);
-
         }
         else
         {
@@ -332,6 +334,13 @@ private void broadCast(String msg) throws IOException {
       clients.put(name, new String[]{ip,client_port});
 
       System.out.println("Added client " + name + " at " + ip + " port " + client_port);
+
+    }else if (tag.equals("remove")) {
+
+
+      clients.remove(msg);
+
+      System.out.println("Removed: " + msg);
 
     }
     else {
