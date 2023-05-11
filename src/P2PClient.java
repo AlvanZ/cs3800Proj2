@@ -26,6 +26,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class P2PClient extends Application {
 
@@ -61,7 +63,7 @@ public class P2PClient extends Application {
       while (!messageHeap.isEmpty()) {
         String request = messageHeap.removeFromQueue();
         updateChatBox(request);
-        System.out.println("Display Message: " + request);
+        
       }
     }
     try {
@@ -69,6 +71,24 @@ public class P2PClient extends Application {
     } catch (InterruptedException e) {
       // Exception handling for thread interruption
       e.printStackTrace();
+    }
+  }
+
+
+ 
+  public P2PClient() {}
+  public P2PClient(String name) {
+    demoName = name;
+  }
+
+  public void demoName() {
+    sendMessage(demoName, "");
+  }
+
+  public void demoMessages() {
+    demo = true;
+    for (int i = 1; i <= 5; i++) {
+      sendMessage(Integer.toString(i), "tag");
     }
   }
 
@@ -219,23 +239,29 @@ public class P2PClient extends Application {
         message = tag.equals("message") ?  userName + ": "+ message : message;
         message = tag.equals("disconnect") ? userName : message;
 
-        response =
-          Utility.formmatPayload(tag, message, Utility.getCurrentTime());
 
-        System.out.println("sending message: " + response);
+        
+        String rawTimeSent  = Utility.getCurrentTime();
+        LocalDateTime timeSent = Utility.stringToLocalDateTime(rawTimeSent);
+
+        response =
+          Utility.formmatPayload(tag, message, rawTimeSent);
+
+        //System.out.println("sending message: " + response);
 
         byte[] buffer = response.getBytes();
         DatagramPacket packet =
           new DatagramPacket(buffer, buffer.length, address, PORT_NUMBER);
         if (tag.equals("message")){
           System.out.println("BroadCasting....");
+          messageHeap.addToQueue(timeSent, Utility.formatTime(timeSent) + message);
           broadCast(response);
           //messageHeap.addToQueue(null, tag);
         }
         else
         {
           socket.send(packet);
-          System.out.println("Sent to address: " + address + " port: " + socket.getLocalPort());
+          //System.out.println("Sent to address: " + address + " port: " + socket.getLocalPort());
 
         }
 
@@ -247,7 +273,7 @@ public class P2PClient extends Application {
 
   public synchronized void send(String message, InetAddress address, int port) throws IOException {
     byte[] buffer = message.getBytes();
-    System.out.println("Sending : " + message + " to" + address + " port: " + port);
+    //System.out.println("Sending : " + message + " to" + address + " port: " + port);
     DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
     socket.send(packet);
 }
@@ -263,7 +289,7 @@ private void broadCast(String msg) throws IOException {
       // TODO: remove the / before ip
       data[0] = data[0].replace('/',' ' ).strip();
 
-      System.out.println("Data: " + data[0] + ",  " + data[1]);
+      //System.out.println("Data: " + data[0] + ",  " + data[1]);
       InetAddress ip = InetAddress.getByName(data[0]);
       Integer p = Integer.parseInt(data[1]);
 
@@ -276,7 +302,12 @@ private void broadCast(String msg) throws IOException {
 
   public void listenToMessage(TextArea screen) {
 
-    try {
+    try {        
+      String init =
+      Utility.formmatPayload("initialize", ".", Utility.getCurrentTime());
+      send(init, address, PORT_NUMBER);
+
+
     while (true) {
       byte[] buffer = new byte[1024];
       DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
@@ -295,7 +326,7 @@ private void broadCast(String msg) throws IOException {
   }
 
   private void processResponse(String response) throws UnknownHostException {
-    System.out.println("Response: " + response);
+    //System.out.println("Response: " + response);
 
     String fields[] = response.split(",");
 
@@ -314,11 +345,12 @@ private void broadCast(String msg) throws IOException {
       signOff();
       //close();
     } else if (tag.equals("username")) {
-      if (!msg.contains("@Server")) {
+      if (!msg.contains("@Tracker")) {
         userName = msg;
-        System.out.println("Set username: " + userName);
       } else {
-        messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), msg);
+
+        LocalDateTime timeEntry = Utility.stringToLocalDateTime(rawTime);
+        messageHeap.addToQueue(timeEntry, Utility.formatTime(timeEntry) + msg);
       }
     } else if (tag.equals("add")) {
 
@@ -344,7 +376,9 @@ private void broadCast(String msg) throws IOException {
 
     }
     else {
-      updateChatBox(time + msg);
+
+       messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), time + msg);
+       // updateChatBox(time + msg);
     }
   }
 

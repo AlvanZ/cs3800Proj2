@@ -64,7 +64,9 @@ public class P2PTracker {
             if (tag.equals("username")) {
     
                 if (!clients.containsKey(msg)) {
+
                     sendClientList();
+                    
                     String name = msg;
                     
                     
@@ -83,7 +85,7 @@ public class P2PTracker {
 
 
                     // broadcast
-                    broadCast(Utility.formmatPayload("message", "@Server: " + name+ " has joined the chat!", current_time));
+                    broadCast(Utility.formmatPayload("message", "@Tracker: " + name+ " has joined the chat!", current_time));
                     //send(Utility.formmatPayload("message", "@Server: " + name+ " has joined the chat!", current_time), packet.getAddress(), packet.getPort());
 
     
@@ -92,7 +94,7 @@ public class P2PTracker {
                 }
                 else{
     
-                    send(Utility.formmatPayload("username", "@Server: Enter a different username", Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
+                    send(Utility.formmatPayload("username", "@Tracker: Enter a different username", Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
                 }
 
             }
@@ -110,6 +112,10 @@ public class P2PTracker {
                 }
 
             }
+            else if (tag.equals("initialize")){
+
+                send(Utility.formmatPayload("message", "@Tracker: Enter your username!", Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
+            }
           }
     
           public void send(String message, InetAddress address, int port) throws IOException {
@@ -123,7 +129,7 @@ public class P2PTracker {
             for (String key : clients.keySet()) {
                 send(Utility.formmatPayload("add", key + "#" + clients.get(key)[0].toString() + "#" + clients.get(key)[1].toString(), Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
             }
-            send(Utility.formmatPayload("message", "@Tracker: Enter your username!", Utility.getCurrentTime()), packet.getAddress(), packet.getPort());
+            
         }
 
         private void addClient(String name, String ip, String port, String time) throws IOException {
@@ -141,7 +147,7 @@ public class P2PTracker {
 
         }
 
-        private void broadCast(String msg) throws IOException {
+        private synchronized void broadCast(String msg) throws IOException {
     
             for (String key : clients.keySet()) {
 
