@@ -6,17 +6,17 @@ import javafx.stage.Stage;
 
 public class ClientTest extends Application {
 
-  private static int numWindows = 3;
+  private static int numWindows = 10;
   private final String[] names = { "Bob", "Derek", "Regan" };
 
-  private static ArrayList<Client> uiClients = new ArrayList<>();
+  private static ArrayList<P2PClient> uiClients = new ArrayList<>();
 
   @Override
   public void start(Stage primaryStage) throws Exception {
     for (int i = 0; i < numWindows; i++) {
       final int index = i;
       Platform.runLater(() -> {
-        Client ui = new Client(names[index]);
+        P2PClient ui = new P2PClient(Integer.toString(index));
         uiClients.add(ui);
         try {
           ui.start(new Stage());
