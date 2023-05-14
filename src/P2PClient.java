@@ -45,6 +45,8 @@ public class P2PClient extends Application {
   public static final Integer PORT_NUMBER = 1234;
   public static  String HOST_NAME = "localhost";
 
+
+
   private Integer portNumber;
 
   private DatagramSocket socket;
@@ -82,12 +84,20 @@ public class P2PClient extends Application {
   }
 
   public void demoName() {
-    sendMessage(demoName, "");
+
+    try {
+      Thread.sleep(100); // wait for 100 milliseconds before checking the list again
+      sendMessage(demoName, "");
+
+    } catch (InterruptedException e) {
+      // Exception handling for thread interruption
+      e.printStackTrace();
+    }
   }
 
-  public void demoMessages() {
+  public void demoMessages(int messages) {
     demo = true;
-    for (int i = 1; i <= 5; i++) {
+    for (int i = 1; i <= messages; i++) {
       sendMessage(Integer.toString(i), "tag");
     }
   }
@@ -283,6 +293,8 @@ private void broadCast(String msg) throws IOException {
 
     
   for (String key : clients.keySet()) {
+
+ 
       
       String[] data = clients.get(key);
  
@@ -296,6 +308,8 @@ private void broadCast(String msg) throws IOException {
       System.out.println("Sending to " + key  + ": " + msg +  "ip: " + ip + " p: " + p);
 
      send(msg, ip, p);
+
+
   }
 }
 
@@ -360,8 +374,6 @@ private void broadCast(String msg) throws IOException {
       String ip = client[1];
       String client_port = client[2];
       
-      //InetAddress ip = InetAddress.getByName(client[1]);
-      
 
       clients.put(name, new String[]{ip,client_port});
 
@@ -376,13 +388,14 @@ private void broadCast(String msg) throws IOException {
 
     }
     else {
-
        messageHeap.addToQueue(Utility.stringToLocalDateTime(rawTime), time + msg);
-       // updateChatBox(time + msg);
+      
     }
   }
 
   public void startClient() {
+
+    // Start listening to messages
     Thread listenToMessageThread = new Thread(
       new Runnable() {
         @Override
@@ -393,7 +406,7 @@ private void broadCast(String msg) throws IOException {
     );
     listenToMessageThread.start();
 
-
+      //Message heap thread
     Thread heapThread = new Thread(() -> {
       while(true){
         checkHeap();
@@ -406,21 +419,11 @@ private void broadCast(String msg) throws IOException {
 
   }
 
-//   public void close() {
-//     try {
-//       if (bufferedReader != null) {
-//         bufferedReader.close();
-//       }
-//       if (bufferedWriter != null) {
-//         bufferedWriter.close();
-//       }
-//       if (socket != null) {
-//         socket.close();
-//       }
-//     } catch (IOException e) {
-//       e.printStackTrace();
-//     }
-//   }
+  public void close() {
+      if (socket != null) {
+        socket.close();
+      }
+  }
 
   public static void main(String[] args) {
     launch(args);

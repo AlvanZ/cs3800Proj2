@@ -7,8 +7,7 @@ import javafx.stage.Stage;
 public class ClientTest extends Application {
 
   private static int numWindows = 10;
-  private final String[] names = { "Bob", "Derek", "Regan" };
-
+  private final int numMessages = 100;
   private static ArrayList<P2PClient> uiClients = new ArrayList<>();
 
   @Override
@@ -32,13 +31,21 @@ public class ClientTest extends Application {
       Scanner scanner = new Scanner(System.in);
       System.out.print("Demo with messages (demo)? ");
       String demo = scanner.nextLine();
+      
       if (demo.equals("demo")) {
         for (int i = 0; i < numWindows; i++) {
-          uiClients.get(i).demoMessages();
+          final int index = i;
+          Thread thread = new Thread(() -> {
+            uiClients.get(index).demoMessages(numMessages);
+          });
+
+          thread.start();
         }
       }
     });
     inputThread.start();
+
+    
   }
 
   // Add path to VM args
